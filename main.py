@@ -4,6 +4,7 @@ Main application entry point for Happy 2 Align
 
 import os
 import sys
+import logging
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from flask import Flask, render_template, session, redirect, url_for
@@ -11,6 +12,16 @@ from flask_sqlalchemy import SQLAlchemy
 from src.models import db
 from src.routes import register_blueprints
 import secrets
+
+# Configureer logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(),  # Output naar console
+        logging.FileHandler('app.log')  # Output naar bestand
+    ]
+)
 
 def create_app():
     """Creëer en configureer de Flask applicatie."""

@@ -1,5 +1,5 @@
 """
-Configuratie voor de agents
+Configuratie voor de agents met timeout en fallback support
 """
 
 import os
@@ -10,13 +10,24 @@ load_dotenv()
 
 # OpenAI configuratie
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "your-api-key-here")
-DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+
+# Model configuratie met fallback
+PRIMARY_MODEL = os.getenv("OPENAI_MODEL", "gpt-4.1-2025-04-14")  # Nieuwste GPT-4 model
+FALLBACK_MODEL = os.getenv("OPENAI_FALLBACK_MODEL", "o4-mini-2025-04-16")  # Snelle fallback
+DEFAULT_MODEL = PRIMARY_MODEL
+
+# Temperature settings
 DEFAULT_TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", "0.7"))
+FALLBACK_TEMPERATURE = float(os.getenv("OPENAI_FALLBACK_TEMPERATURE", "0.7"))
+
+# Timeout configuratie
+MODEL_TIMEOUT = int(os.getenv("MODEL_TIMEOUT", "30"))  # 30 seconden voor primary model
+FALLBACK_TIMEOUT = int(os.getenv("FALLBACK_TIMEOUT", "10"))  # 10 seconden voor fallback
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "45"))  # Totale request timeout
 
 # Agent configuratie
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", "2000"))
 MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
-TIMEOUT = int(os.getenv("TIMEOUT", "30"))
 
 # Systeem prompts
 ROUTER_SYSTEM_PROMPT = """Je bent een Router agent die berichten analyseert en doorstuurt naar de juiste agent.
@@ -42,4 +53,13 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///instance/happy2align.db")
 
 # API configuratie
 API_HOST = os.getenv("API_HOST", "0.0.0.0")
-API_PORT = int(os.getenv("API_PORT", "8000")) 
+API_PORT = int(os.getenv("API_PORT", "8000"))
+
+# Model retry configuratie
+MODEL_RETRY_CONFIG = {
+    "max_retries": 2,
+    "retry_delay": 1.0,  # seconds
+    "timeout": MODEL_TIMEOUT,
+    "fallback_timeout": FALLBACK_TIMEOUT,
+    "use_fallback": True
+}

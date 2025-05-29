@@ -8,16 +8,16 @@
         <!-- Agent statusbalk -->
         <div id="agentStatusBar" class="flex items-center gap-6 mb-2">
             <div class="flex flex-col items-center">
-                <i id="icon-manager" class="fa-solid fa-chess-king agent-black"></i>
-                <span class="text-xs mt-1">Manager</span>
-            </div>
-            <div class="flex flex-col items-center">
-                <i id="icon-router" class="fa-solid fa-network-wired agent-black"></i>
+                <i id="icon-router" class="fa-solid fa-route agent-black"></i>
                 <span class="text-xs mt-1">Router</span>
             </div>
             <div class="flex flex-col items-center">
+                <i id="icon-decomposer" class="fa-solid fa-sitemap agent-black"></i>
+                <span class="text-xs mt-1">Decomposer</span>
+            </div>
+            <div class="flex flex-col items-center">
                 <i id="icon-req" class="fa-solid fa-list-check agent-black"></i>
-                <span class="text-xs mt-1">Requirement</span>
+                <span class="text-xs mt-1">Refiner</span>
             </div>
             <div class="flex flex-col items-center">
                 <i id="icon-tom" class="fa-solid fa-brain agent-black"></i>
@@ -29,11 +29,25 @@
             </div>
             <div id="agentTimer" class="ml-4 text-xs text-gray-500 font-mono"></div>
         </div>
+        
+        <!-- Progress indicator -->
+        <div id="progressBar" class="mb-4 hidden">
+            <div class="text-xs text-gray-600 mb-1">
+                <span id="progressText">Vraag 1 van 5 - Subtopic 1 van 3</span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2">
+                <div id="progressFill" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+        </div>
+        
         <!-- Opdrachtregel -->
         <div id="agentTask" class="mb-4 text-xs font-mono text-gray-500" style="min-height: 1.5em;"></div>
 
-        <div id="messageList" class="h-96 overflow-y-auto mb-4 space-y-4">
-            <!-- Berichten worden hier dynamisch toegevoegd -->
+        <div id="messageList" class="h-96 overflow-y-auto mb-4 space-y-4 p-4 bg-gray-50 rounded-lg">
+            <!-- Welcome message -->
+            <div class="message agent-message text-center text-gray-600 italic">
+                Welkom bij Happy 2 Align! Vertel me over je project of vraag, en ik help je met het opstellen van duidelijke requirements en een werkbare workflow.
+            </div>
         </div>
         
         <form id="chatForm" class="flex gap-2">
@@ -44,6 +58,10 @@
                     class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
                 Verstuur
             </button>
+            <button type="button" id="resetBtn"
+                    class="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                Reset
+            </button>
         </form>
     </div>
 </div>
@@ -53,37 +71,56 @@
 .agent-red { color: #ef4444; }
 .agent-orange { color: #f59e42; }
 .agent-black { color: #222; }
+.agent-blue { color: #3b82f6; }
+
 .fa-solid {
     font-size: 22px;
     margin-bottom: 2px;
-    transition: color 0.2s;
+    transition: color 0.3s ease;
 }
 
 .message {
     padding: 1rem;
     border-radius: 0.5rem;
     margin-bottom: 1rem;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .user-message {
     background-color: #e3f2fd;
     margin-left: 2rem;
+    border-left: 4px solid #2196f3;
 }
 
 .agent-message {
     background-color: #f5f5f5;
     margin-right: 2rem;
+    border-left: 4px solid #9e9e9e;
 }
 
 .error-message {
     background-color: #ffebee;
     color: #c62828;
+    border-left: 4px solid #f44336;
 }
 
-.agent-switch {
+.workflow-message {
+    background-color: #e8f5e9;
+    border-left: 4px solid #4caf50;
+}
+
+.question-message {
     background-color: #fff3e0;
-    color: #e65100;
-    font-style: italic;
+    border-left: 4px solid #ff9800;
+}
+
+.hidden {
+    display: none !important;
 }
 </style>
 
@@ -95,38 +132,96 @@ document.addEventListener('DOMContentLoaded', function() {
     const messageList = document.getElementById('messageList');
     const chatForm = document.getElementById('chatForm');
     const messageInput = document.getElementById('messageInput');
+    const resetBtn = document.getElementById('resetBtn');
     const agentTask = document.getElementById('agentTask');
-    const iconManager = document.getElementById('icon-manager');
-    const iconRouter = document.getElementById('icon-router');
-    const iconReq = document.getElementById('icon-req');
-    const iconTom = document.getElementById('icon-tom');
-    const iconWorkflow = document.getElementById('icon-workflow');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const progressFill = document.getElementById('progressFill');
     const agentTimer = document.getElementById('agentTimer');
     
-    // Houd de context bij
-    let context = {
-        current_agent: null,
-        subtopic: "initial_requirements",
-        question: "Wat zijn je belangrijkste requirements?",
-        round: 1,
-        requirements: []
+    // Agent icons
+    const icons = {
+        router: document.getElementById('icon-router'),
+        decomposer: document.getElementById('icon-decomposer'),
+        req: document.getElementById('icon-req'),
+        tom: document.getElementById('icon-tom'),
+        workflow: document.getElementById('icon-workflow')
     };
-    let agentError = null;
+    
+    // Session state
+    let sessionId = 'session_' + Date.now();
     let timerInterval = null;
     let timerStart = null;
+    let currentState = {
+        state: 'initial',
+        current_subtopic: 0,
+        current_question: 0,
+        total_subtopics: 0,
+        requirements_count: 0
+    };
 
     function setAgentTask(text) {
         agentTask.textContent = text || '';
     }
 
-    function addMessage(content, type) {
+    function updateAgentStatus(agentName, status) {
+        const icon = icons[agentName];
+        if (!icon) return;
+        
+        // Remove all status classes
+        icon.classList.remove('agent-black', 'agent-orange', 'agent-green', 'agent-red', 'agent-blue');
+        
+        // Add new status class
+        switch(status) {
+            case 'active':
+                icon.classList.add('agent-green');
+                break;
+            case 'waiting':
+                icon.classList.add('agent-orange');
+                break;
+            case 'error':
+                icon.classList.add('agent-red');
+                break;
+            case 'complete':
+                icon.classList.add('agent-blue');
+                break;
+            default:
+                icon.classList.add('agent-black');
+        }
+    }
+
+    function updateProgress(current, total, questionNum) {
+        if (total > 0) {
+            progressBar.classList.remove('hidden');
+            const progress = ((current * 5 + questionNum) / (total * 5)) * 100;
+            progressFill.style.width = progress + '%';
+            progressText.textContent = `Vraag ${questionNum + 1} van 5 - Subtopic ${current + 1} van ${total}`;
+        } else {
+            progressBar.classList.add('hidden');
+        }
+    }
+
+    function addMessage(content, type = 'agent') {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${type}-message`;
-        if (type === 'agent' || type === 'error') {
-            messageDiv.innerHTML = content.replace(/\n/g, '<br>');
+        
+        if (type === 'workflow') {
+            // Format workflow nicely
+            const lines = content.split('\n');
+            let formattedContent = '<div class="font-semibold mb-2">' + lines[0] + '</div>';
+            formattedContent += '<ol class="list-decimal list-inside space-y-1">';
+            for (let i = 1; i < lines.length; i++) {
+                if (lines[i].trim()) {
+                    const step = lines[i].replace(/^\d+\.\s*/, '');
+                    formattedContent += `<li>${step}</li>`;
+                }
+            }
+            formattedContent += '</ol>';
+            messageDiv.innerHTML = formattedContent;
         } else {
             messageDiv.textContent = content;
         }
+        
         messageList.appendChild(messageDiv);
         messageList.scrollTop = messageList.scrollHeight;
     }
@@ -139,14 +234,23 @@ document.addEventListener('DOMContentLoaded', function() {
             agentTimer.textContent = `⏳ ${elapsed}s`;
         }, 200);
     }
+
     function stopTimer() {
-        clearInterval(timerInterval);
-        agentTimer.textContent = '';
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            agentTimer.textContent = '';
+        }
     }
 
     async function sendMessage(message) {
-        setAgentTask('Agent denkt na...');
+        // Reset all agents to black
+        Object.values(icons).forEach(icon => updateAgentStatus(icon.id.replace('icon-', ''), 'inactive'));
+        
+        // Start processing
+        setAgentTask('Router analyseert je bericht...');
+        updateAgentStatus('router', 'active');
         startTimer();
+        
         try {
             const response = await fetch('/api/process', {
                 method: 'POST',
@@ -155,131 +259,155 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     message: message,
-                    context: context
+                    session_id: sessionId
                 })
             });
 
             if (!response.ok) {
                 const errorData = await response.json();
-                setAgentTask('Fout bij uitvoeren van opdracht.');
-                stopTimer();
                 throw new Error(errorData.error || 'Er is een fout opgetreden');
             }
 
             const data = await response.json();
             console.log('API response:', data);
+            
+            // Update state
             if (data.context) {
-                context = {...context, ...data.context};
+                currentState = {...currentState, ...data.context};
             }
-            addMessage(data.response, 'agent');
-            if (data.next_agent) {
-                context.current_agent = data.next_agent;
-                addMessage(`Switching to ${data.next_agent}...`, 'agent-switch');
+            
+            // Update UI based on response type
+            switch(data.type) {
+                case 'question':
+                    // Update agent statuses
+                    updateAgentStatus('router', 'complete');
+                    updateAgentStatus('decomposer', 'complete');
+                    updateAgentStatus('req', 'active');
+                    updateAgentStatus('tom', 'active');
+                    
+                    // Show question
+                    addMessage(data.response, 'question');
+                    setAgentTask(`Bezig met: ${data.subtopic || 'Requirements verfijnen'}`);
+                    
+                    // Update progress
+                    updateProgress(
+                        currentState.current_subtopic,
+                        currentState.total_subtopics || 1,
+                        currentState.current_question
+                    );
+                    break;
+                    
+                case 'workflow':
+                    // Update agent statuses
+                    updateAgentStatus('workflow', 'active');
+                    updateAgentStatus('req', 'complete');
+                    
+                    // Show workflow
+                    addMessage(data.response, 'workflow');
+                    setAgentTask('Workflow gegenereerd!');
+                    progressBar.classList.add('hidden');
+                    
+                    // All agents complete
+                    setTimeout(() => {
+                        Object.values(icons).forEach(icon => updateAgentStatus(icon.id.replace('icon-', ''), 'complete'));
+                    }, 500);
+                    break;
+                    
+                case 'workflow_refined':
+                    updateAgentStatus('workflow', 'active');
+                    addMessage(data.response, 'workflow');
+                    setAgentTask('Workflow aangepast!');
+                    break;
+                    
+                case 'error':
+                    addMessage(data.response, 'error');
+                    setAgentTask('Fout opgetreden');
+                    Object.values(icons).forEach(icon => updateAgentStatus(icon.id.replace('icon-', ''), 'error'));
+                    break;
+                    
+                default:
+                    addMessage(data.response, 'agent');
             }
-            // Gebruik de status uit de backend om de kleuren te bepalen
-            const status = data.status;
-            if (status) {
-                iconManager.className = 'fa-solid fa-chess-king ' +
-                    (status.manager === 'error' ? 'agent-red' :
-                    status.manager === 'waiting' ? 'agent-orange' :
-                    status.manager === 'active' ? 'agent-green' : 'agent-black');
-
-                iconRouter.className = 'fa-solid fa-network-wired ' +
-                    (status.router === 'error' ? 'agent-red' :
-                    status.router === 'waiting' ? 'agent-orange' :
-                    status.router === 'active' ? 'agent-green' : 'agent-black');
-
-                iconReq.className = 'fa-solid fa-list-check ' +
-                    (status.requirement_refiner === 'error' ? 'agent-red' :
-                    status.requirement_refiner === 'waiting' ? 'agent-orange' :
-                    status.requirement_refiner === 'active' ? 'agent-green' : 'agent-black');
-
-                iconTom.className = 'fa-solid fa-brain ' +
-                    (status.tom_helper === 'error' ? 'agent-red' :
-                    status.tom_helper === 'waiting' ? 'agent-orange' :
-                    status.tom_helper === 'active' ? 'agent-green' : 'agent-black');
-
-                iconWorkflow.className = 'fa-solid fa-diagram-project ' +
-                    (status.workflow_generator === 'error' ? 'agent-red' :
-                    status.workflow_generator === 'waiting' ? 'agent-orange' :
-                    status.workflow_generator === 'active' ? 'agent-green' : 'agent-black');
+            
+            // Show expertise and sentiment if available
+            if (data.expertise) {
+                console.log('User expertise:', data.expertise);
             }
-            if (context.current_agent === 'RequirementRefiner') {
-                setAgentTask(context.question || 'Requirements verfijnen...');
-                addMessage(`Subtopic: ${context.subtopic} (Vraag ${context.round}/5)`, 'agent-switch');
-            } else if (context.current_agent === 'WorkflowRefiner') {
-                setAgentTask('Workflow genereren...');
-            } else if (context.current_agent === 'RouterAgent' || !context.current_agent) {
-                setAgentTask('Router bepaalt de juiste agent...');
-            } else {
-                setAgentTask('');
+            if (data.sentiment) {
+                console.log('User sentiment:', data.sentiment);
             }
-            stopTimer();
+            
         } catch (error) {
-            setAgentTask('Fout bij uitvoeren van opdracht.');
-            stopTimer();
             console.error('Error:', error);
             addMessage(error.message, 'error');
+            setAgentTask('Fout bij verwerken');
+            Object.values(icons).forEach(icon => updateAgentStatus(icon.id.replace('icon-', ''), 'error'));
+        } finally {
+            stopTimer();
         }
     }
 
+    // Handle form submission
     chatForm.addEventListener('submit', async function(e) {
         e.preventDefault();
         const message = messageInput.value.trim();
         if (!message) return;
-        // Toon het gebruikersbericht
+        
+        // Show user message
         addMessage(message, 'user');
-        // Leeg het invoerveld direct
+        
+        // Clear input
         messageInput.value = '';
-        // Verstuur het bericht
+        
+        // Send message
         await sendMessage(message);
     });
 
-    // Functie om status uit backend te laden en iconen te kleuren
-    async function fetchAndSetAgentStatus() {
-        try {
-            const response = await fetch('/api/status');
-            if (!response.ok) return;
-            const status = await response.json();
-            if (status) {
-                iconManager.className = 'fa-solid fa-chess-king ' +
-                    (status.manager === 'error' ? 'agent-red' :
-                    status.manager === 'waiting' ? 'agent-orange' :
-                    status.manager === 'active' ? 'agent-green' : 'agent-black');
-
-                iconRouter.className = 'fa-solid fa-network-wired ' +
-                    (status.router === 'error' ? 'agent-red' :
-                    status.router === 'waiting' ? 'agent-orange' :
-                    status.router === 'active' ? 'agent-green' : 'agent-black');
-
-                iconReq.className = 'fa-solid fa-list-check ' +
-                    (status.requirement_refiner === 'error' ? 'agent-red' :
-                    status.requirement_refiner === 'waiting' ? 'agent-orange' :
-                    status.requirement_refiner === 'active' ? 'agent-green' : 'agent-black');
-
-                iconTom.className = 'fa-solid fa-brain ' +
-                    (status.tom_helper === 'error' ? 'agent-red' :
-                    status.tom_helper === 'waiting' ? 'agent-orange' :
-                    status.tom_helper === 'active' ? 'agent-green' : 'agent-black');
-
-                iconWorkflow.className = 'fa-solid fa-diagram-project ' +
-                    (status.workflow_generator === 'error' ? 'agent-red' :
-                    status.workflow_generator === 'waiting' ? 'agent-orange' :
-                    status.workflow_generator === 'active' ? 'agent-green' : 'agent-black');
+    // Handle reset button
+    resetBtn.addEventListener('click', async function() {
+        if (confirm('Weet je zeker dat je de sessie wilt resetten?')) {
+            try {
+                await fetch('/api/reset', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId
+                    })
+                });
+                
+                // Reset UI
+                messageList.innerHTML = `
+                    <div class="message agent-message text-center text-gray-600 italic">
+                        Sessie gereset. Vertel me over je nieuwe project!
+                    </div>
+                `;
+                
+                // Reset state
+                sessionId = 'session_' + Date.now();
+                currentState = {
+                    state: 'initial',
+                    current_subtopic: 0,
+                    current_question: 0,
+                    total_subtopics: 0,
+                    requirements_count: 0
+                };
+                
+                // Reset UI elements
+                progressBar.classList.add('hidden');
+                setAgentTask('');
+                Object.values(icons).forEach(icon => updateAgentStatus(icon.id.replace('icon-', ''), 'inactive'));
+                
+            } catch (error) {
+                console.error('Reset error:', error);
+                addMessage('Fout bij resetten van sessie', 'error');
             }
-        } catch (e) {
-            // fallback: alles zwart
-            iconManager.className = 'fa-solid fa-chess-king agent-black';
-            iconRouter.className = 'fa-solid fa-network-wired agent-black';
-            iconReq.className = 'fa-solid fa-list-check agent-black';
-            iconTom.className = 'fa-solid fa-brain agent-black';
-            iconWorkflow.className = 'fa-solid fa-diagram-project agent-black';
         }
-    }
+    });
 
-    // Init statusbalk met backendstatus
-    fetchAndSetAgentStatus();
-    setAgentTask('Router bepaalt de juiste agent...');
+    // Initialize
+    setAgentTask('Klaar om te beginnen! Vertel me over je project.');
 });
 </script>
-{% endblock %} 
+{% endblock %}
