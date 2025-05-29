@@ -96,6 +96,13 @@ class LLMClient:
         try:
             logger.info(f"Calling {PRIMARY_MODEL} with timeout {MODEL_TIMEOUT}s")
             
+            # Gebruik een nieuwe event loop voor elke call
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
             response = await asyncio.wait_for(
                 self.primary_llm.ainvoke(messages, **kwargs),
                 timeout=MODEL_TIMEOUT
@@ -119,6 +126,13 @@ class LLMClient:
         if use_fallback:
             try:
                 logger.info(f"Falling back to {FALLBACK_MODEL} with timeout {FALLBACK_TIMEOUT}s")
+                
+                # Gebruik een nieuwe event loop voor de fallback
+                try:
+                    loop = asyncio.get_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
                 
                 response = await asyncio.wait_for(
                     self.fallback_llm.ainvoke(messages, **kwargs),
@@ -192,6 +206,13 @@ class LLMClient:
         # Try primary model
         try:
             logger.info(f"Direct OpenAI call to {model} with timeout {MODEL_TIMEOUT}s")
+            
+            # Gebruik een nieuwe event loop voor elke call
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
             
             response = await asyncio.wait_for(
                 self.async_client.chat.completions.create(
@@ -278,6 +299,13 @@ class LLMClient:
             List of embedding values
         """
         try:
+            # Gebruik een nieuwe event loop voor elke call
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
             response = await self.async_client.embeddings.create(
                 model=model,
                 input=text
@@ -339,6 +367,13 @@ class LLMClient:
         # Test primary model
         try:
             test_msg = [HumanMessage(content="test")]
+            # Gebruik een nieuwe event loop voor elke call
+            try:
+                loop = asyncio.get_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+            
             await asyncio.wait_for(
                 self.primary_llm.ainvoke(test_msg),
                 timeout=MODEL_TIMEOUT
