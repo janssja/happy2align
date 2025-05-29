@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy 2 Align - Betaling</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Happy 2 Align</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.get_sessions') }}">Dashboard</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-light text-dark me-3">Credits: {{ user.credits_remaining }}</span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light btn-sm">Uitloggen</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h2>Credits Kopen</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-4">
+                            <h3>49 Credits voor €49</h3>
+                            <p class="lead">Krijg toegang tot 49 sessies met Happy 2 Align</p>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="card mb-3">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Wat krijg je?</h5>
+                                        <ul class="list-group list-group-flush">
+                                            <li class="list-group-item">49 sessies met Happy 2 Align</li>
+                                            <li class="list-group-item">Verfijn vereisten met AI</li>
+                                            <li class="list-group-item">Genereer gedetailleerde workflows</li>
+                                            <li class="list-group-item">Onbeperkte toegang tot je resultaten</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Betaalgegevens</h5>
+                                        <p>Prijs: <strong>€49,00</strong></p>
+                                        <p>Betaalmethode: Creditcard</p>
+                                        <p>Je wordt doorgestuurd naar een beveiligde betaalpagina.</p>
+                                        <div class="d-grid gap-2">
+                                            <button id="checkoutButton" class="btn btn-primary">Doorgaan naar betaling</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+</body>
+</html>

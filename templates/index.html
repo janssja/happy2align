@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Happy 2 Align{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Hero sectie -->
+    <div class="text-center mb-16">
+        <h1 class="text-4xl font-bold text-gray-800 mb-4">Welkom bij Happy 2 Align</h1>
+        <p class="text-xl text-gray-600">Je slimme assistent voor het verfijnen van requirements en genereren van workflows</p>
+    </div>
+
+    <!-- Features grid -->
+    <div class="grid md:grid-cols-3 gap-8 mb-16">
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="text-blue-500 text-2xl mb-4">🎯</div>
+            <h3 class="text-xl font-semibold mb-2">Requirement Verfijning</h3>
+            <p class="text-gray-600">Werk samen met onze AI om duidelijke, meetbare en testbare requirements op te stellen.</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="text-blue-500 text-2xl mb-4">⚡</div>
+            <h3 class="text-xl font-semibold mb-2">Workflow Generatie</h3>
+            <p class="text-gray-600">Genereer automatisch gedetailleerde workflows op basis van je requirements.</p>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <div class="text-blue-500 text-2xl mb-4">🤖</div>
+            <h3 class="text-xl font-semibold mb-2">AI Ondersteuning</h3>
+            <p class="text-gray-600">Profiteer van geavanceerde AI-technologie voor optimale resultaten.</p>
+        </div>
+    </div>
+
+    <!-- Hoe het werkt -->
+    <div class="bg-white p-8 rounded-lg shadow-md mb-16">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Hoe werkt het?</h2>
+        <div class="space-y-6">
+            <div class="flex items-start">
+                <div class="bg-blue-100 text-blue-500 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">1</div>
+                <div>
+                    <h3 class="font-semibold mb-2">Start een Chat</h3>
+                    <p class="text-gray-600">Begin een gesprek met onze AI-assistent via de chat interface.</p>
+                </div>
+            </div>
+            <div class="flex items-start">
+                <div class="bg-blue-100 text-blue-500 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">2</div>
+                <div>
+                    <h3 class="font-semibold mb-2">Verfijn Requirements</h3>
+                    <p class="text-gray-600">Werk samen met de AI om je requirements te verfijnen en compleet te maken.</p>
+                </div>
+            </div>
+            <div class="flex items-start">
+                <div class="bg-blue-100 text-blue-500 rounded-full w-8 h-8 flex items-center justify-center mr-4 flex-shrink-0">3</div>
+                <div>
+                    <h3 class="font-semibold mb-2">Genereer Workflow</h3>
+                    <p class="text-gray-600">Laat de AI een gedetailleerde workflow genereren op basis van je requirements.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="text-center">
+        {% if session.get('user_id') %}
+            <a href="{{ url_for('chat.index') }}" class="inline-block bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                Start een Chat
+            </a>
+        {% else %}
+            <div class="space-x-4">
+                <a href="{{ url_for('auth.login') }}" class="inline-block bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                    Inloggen
+                </a>
+                <a href="{{ url_for('auth.register') }}" class="inline-block bg-gray-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors">
+                    Registreren
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Happy 2 Align{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-8">
+    <h1 class="text-2xl font-bold text-center mb-8">Jouw sessies</h1>
+    <div id="sessionsList">
+        <p class="text-gray-600">Sessiegegevens worden geladen...</p>
+    </div>
+    <div class="mt-8 text-center">
+        <a href="/" class="text-blue-600 hover:underline">Terug naar home</a>
+    </div>
+</div>
+<script>
+async function fetchSessions() {
+    const response = await fetch('/dashboard/sessions', {headers: {'Accept': 'application/json'}});
+    const data = await response.json();
+    const listDiv = document.getElementById('sessionsList');
+    if (data.sessions.length === 0) {
+        listDiv.innerHTML = '<p class="text-gray-600">Je hebt nog geen sessies.</p>';
+    } else {
+        let html = '<ul class="divide-y divide-gray-200">';
+        for (const sessie of data.sessions) {
+            html += `<li class="py-4">Sessie #${sessie.id} - ${sessie.created_at}</li>`;
+        }
+        html += '</ul>';
+        listDiv.innerHTML = html;
+    }
+}
+fetchSessions();
+</script>
+{% endblock %} 

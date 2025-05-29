@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Happy 2 Align - Sessie</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">Happy 2 Align</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard.get_sessions') }}">Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Sessie</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-light text-dark me-3">Credits: {{ user.credits_remaining }}</span>
+                    <a href="{{ url_for('auth.logout') }}" class="btn btn-outline-light btn-sm">Uitloggen</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h2>Sessie: {{ session.topic }}</h2>
+                        <span class="badge {% if session.status == 'active' %}bg-success{% elif session.status == 'completed' %}bg-info{% else %}bg-warning{% endif %}">
+                            {{ session.status }}
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h4>Sessie Informatie</h4>
+                                <p><strong>Start tijd:</strong> {{ session.start_time }}</p>
+                                <p><strong>Status:</strong> {{ session.status }}</p>
+                                {% if session.end_time %}
+                                <p><strong>Eind tijd:</strong> {{ session.end_time }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6">
+                                <h4>Subtopics</h4>
+                                {% if session.subtopics %}
+                                <ul class="list-group">
+                                    {% for subtopic in session.subtopics %}
+                                    <li class="list-group-item">{{ subtopic }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <p>Nog geen subtopics gedefinieerd.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header">
+                                <h3>Verfijnde Vereisten</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if session.requirements %}
+                                <ul class="list-group">
+                                    {% for requirement in session.requirements %}
+                                    <li class="list-group-item">{{ requirement }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% else %}
+                                <p>Nog geen vereisten gedefinieerd.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card shadow-sm mb-4">
+                            <div class="card-header">
+                                <h3>Gegenereerde Workflow</h3>
+                            </div>
+                            <div class="card-body">
+                                {% if session.workflow %}
+                                <ol class="list-group list-group-numbered">
+                                    {% for step in session.workflow %}
+                                    <li class="list-group-item">{{ step }}</li>
+                                    {% endfor %}
+                                </ol>
+                                {% else %}
+                                <p>Nog geen workflow gegenereerd.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h3>Conversatie</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="conversation" class="mb-3" style="height: 300px; overflow-y: auto; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px;">
+                            <!-- Conversatie wordt hier dynamisch ingevuld -->
+                        </div>
+                        <div class="input-group">
+                            <input type="text" id="userInput" class="form-control" placeholder="Type je vraag hier...">
+                            <button class="btn btn-primary" id="sendButton">Verstuur</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/session.js') }}"></script>
+</body>
+</html>
